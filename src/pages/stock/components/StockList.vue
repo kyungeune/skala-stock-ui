@@ -21,6 +21,19 @@ const page = reactive({
   count: 10,
 })
 
+const emit = defineEmits(['selectStock'])
+
+const onRowSelected = (item) => {
+  // 주식 클릭 → 부모(StockMain)로 주식ID 올리기
+  emit('selectStock', item.id)
+}
+
+const selectStock = (row) => {
+  // row.id가 주식ID라고 가정
+  emit('selectStock', row.id)
+}
+
+
 const getStockList = async () => {
   const queryParams = {
     count: page.count,          // ✅ 사용자가 고른 페이지당 개수
@@ -111,7 +124,7 @@ onMounted(getStockList)
 
   <div class="row g-2 align-items-center m-2 mt-0">
     <div class="col">
-      <ItemsTable :nosetting="true" :headers="table.headers" :items="table.items" />
+      <ItemsTable :nosetting="true" :headers="table.headers" :items="table.items" @rowSelected="onRowSelected" />
       <PageNavigator v-model:current="page.current" v-model:count="page.count" :totalCount="page.total" />
     </div>
   </div>

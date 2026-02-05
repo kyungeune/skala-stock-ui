@@ -1,8 +1,16 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import apiCall from '@/scripts/api-call'
 import { notifyInfo } from '@/scripts/store-popups'
 import { usePlayer } from '@/scripts/store-player'
+
+// ✅ 부모(StockMain)에서 내려주는 선택된 주식ID
+const props = defineProps({
+  selectedStockId: {
+    type: [String, Number],
+    default: '',
+  },
+})
 
 const stockId = ref('')
 const stockQuantity = ref('')
@@ -20,6 +28,19 @@ const table = reactive({
 
 const player = usePlayer()
 
+// ✅ 주식 목록에서 클릭한 주식ID가 오면 자동으로 입력칸에 반영
+watch(
+  () => props.selectedStockId,
+  (val) => {
+    if (val === null || val === undefined) return
+    const next = String(val).trim()
+    if (!next) return
+    stockId.value = next
+    // (선택) 수량 입력칸으로 포커스 이동 같은 UX는 원하시면 추가해드릴게요
+  },
+  { immediate: true }
+)
+
 const getPlayerInfo = async () => {
   const pid = player.playerId
   if (!pid) {
@@ -31,7 +52,7 @@ const getPlayerInfo = async () => {
 
   if (data.result === apiCall.Response.SUCCESS) {
     const body = data.body ?? {}
-    playerMoney.value = String(body.playerMoney ?? body.playerMoney ?? '')
+    playerMoney.value = String(body.playerMoney ?? '')
     table.items = body.items ?? body.stocks ?? []
   } else {
     notifyInfo(data.message || '플레이어 정보 조회 실패')

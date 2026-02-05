@@ -70,3 +70,14 @@ const signup = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.bss-background {
+  width: 590px;
+  height: 380px;
+  background-image: url('/logo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+</style>
