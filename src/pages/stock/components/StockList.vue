@@ -17,25 +17,42 @@ const table = reactive({
 
 const page = reactive({
   total: 0,
-  current: 1,
+  current: 1, // 1부터 시작(UI)
   count: 10,
 })
 
 const getStockList = async () => {
-  const data = await apiCall.get('/api/stocks/list', null, {
-    current: page.current,
-    count: page.count,
-  })
+  const queryParams = {
+    count: page.count,          // ✅ 사용자가 고른 페이지당 개수
+    offset: page.current - 1,   // ✅ (현재 서버는 페이지 인덱스 방식)
+  }
+
+  const data = await apiCall.get('/api/stocks/list', null, queryParams)
 
   if (data.result === apiCall.Response.SUCCESS) {
-    // body 구조가 다를 수 있으니 안전 처리
     const body = data.body ?? {}
-    table.items = body.items ?? body.list ?? body ?? []
-    page.total = body.total ?? body.totalCount ?? table.items.length
+
+    // ✅ 이번 페이지 데이터(마지막이면 2~3개만 내려오면 그대로 2~3개만 보임)
+    const list = body.list ?? body.items ?? []
+    table.items = Array.isArray(list) ? list : []
+
+    // ✅ 전체 개수(페이지 버튼 계산용). total이 -1 / 0 같은 케이스도 대비
+    if (typeof body.total === 'number') {
+      page.total = body.total
+    } else if (typeof body.totalCount === 'number') {
+      page.total = body.totalCount
+    }
+
+    // ✅ current는 서버 응답으로 덮어쓰지 말고(루프 방지), 사용자가 누른 값 유지
+    // if (typeof body.offset === 'number') page.current = body.offset + 1
+
+    // ✅ 마지막 페이지에서 내려온 "실제 개수"는 참고만(절대 page.count에 덮어쓰지 않음)
+    // const receivedCount = typeof body.count === 'number' ? body.count : table.items.length
   } else {
     notifyInfo(data.message || '주식 목록 조회 실패')
   }
 }
+
 
 const addStock = async () => {
   const payload = {
@@ -48,20 +65,36 @@ const addStock = async () => {
   if (data.result === apiCall.Response.SUCCESS) {
     stockName.value = ''
     stockPrice.value = ''
+
+    // ✅ 추가 후에는 1페이지로 보내고 목록 새로고침(선택)
+    page.current = 1
     await getStockList()
   } else {
     notifyInfo(data.message || '주식 추가 실패')
   }
 }
 
-watch(() => page.current, getStockList)
-watch(() => page.count, async () => {
+// ✅ 페이지 번호 누르면 current 변경 → 서버에 다시 조회
+watch(() => page.current, () => {
+  getStockList()
+})
+
+// ✅ 페이지당 개수 변경 시 1페이지로 이동 후 다시 조회
+watch(() => page.count, async (val) => {
+  // ✅ 최소 1개 이상 강제 (0/null/NaN 방지)
+  if (!val || val < 1) {
+    page.count = 10   // 기본값으로 복구
+    return
+  }
+
   page.current = 1
   await getStockList()
 })
 
 onMounted(getStockList)
 </script>
+
+
 
 <template>
   <div class="row mt-2">
