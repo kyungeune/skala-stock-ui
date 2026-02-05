@@ -1,5 +1,11 @@
 <script setup>
+import { ref } from 'vue';
 
+const isNewPlayer = ref(false);
+
+function doLogin() {
+  console.log("로그인 버튼 눌림")
+}
 </script>
 
 <template>
@@ -14,8 +20,8 @@
           <InlineInput label="비밀번호" class="mb-1" type="password" placeholder="비밀번호" />
         </div>
         <div class="d-flex justify-content-end">
-          <button class="btn btn-primary btn-sm">회원가입</button>
-          <button class="btn btn-primary btn-sm">로그인</button>
+          <button v-if="isNewPlayer" class="btn btn-primary btn-sm">회원가입</button>
+          <button v-else class="btn btn-primary btn-sm" @click="doLogin">로그인</button>
         </div>
       </div>
     </div>
