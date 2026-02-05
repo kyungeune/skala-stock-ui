@@ -34,4 +34,13 @@ const router = createRouter({
     ]
 })
 
+// ✅ 전역 가드: /stock 접근 시 로그인 여부 체크
+router.beforeEach((to) => {
+  const isLoggedIn = !!sessionStorage.getItem('skala-stock-ui')
+
+  if (to.path === '/stock' && !isLoggedIn) {
+    return '/start'
+  }
+})
+
 export default router
